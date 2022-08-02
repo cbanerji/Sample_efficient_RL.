@@ -103,7 +103,7 @@ def rew_update(state, rew, tstep, bufr_enc, HVD_point, model, new_beta = args.pa
         print("\n Current HVD_point calculation frequency :"+str(new_freq))
         print("\n Current #samples from neighborhood: " +str(samples))
         print("\n Current beta :"+str(new_beta))
-        HVD_point = updt.get_density_pk(candt,k,bufr_enc) # Get density peak
+        HVD_point = updt.get_HVD_point(candt,k,bufr_enc) # Get HVD point
         print("HVD_point new :"+str(HVD_point))
 
     else:

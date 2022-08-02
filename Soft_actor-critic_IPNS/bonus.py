@@ -77,7 +77,7 @@ def get_den_all(candt_pk, bufr_enc, k,rept=100):
 
 
 # Calculate density peak
-def get_density_pk(candt,k, bufr_enc):
+def get_HVD_point(candt,k, bufr_enc):
     coll = []
     # Sample 'candt' points at random
     candt_pk = random.sample(bufr_enc, candt)
