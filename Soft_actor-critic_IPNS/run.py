@@ -81,13 +81,13 @@ writer = SummaryWriter('runs_Hopper/{}_SAC_valfun_{}_{}_{}_{}_{}'.format(datetim
 memory = ReplayMemory(args.replay_size, args.seed)
 enc_buffer = []
 
-centroid = torch.zeros([1,2])# (x,y) y is the bottleneck for an env.
+HVD_point = torch.zeros([1,2])# (x,y) y is the bottleneck for an env.
 
 def trnf(sub_val):
     #return (2/(np.exp (sub_val)+  np.exp(- sub_val)))
     return (2/(math.exp (sub_val)+  math.exp(- sub_val)))
 
-def rew_update(state, rew, tstep, bufr_enc, centroid, model, new_beta = args.param_beta, new_freq = args.cal_freq, samples = args.sampls ):
+def rew_update(state, rew, tstep, bufr_enc, HVD_point, model, new_beta = args.param_beta, new_freq = args.cal_freq, samples = args.sampls ):
     state = state.reshape(1,-1)
     observation = torch.from_numpy(state.astype('float32'))
 
@@ -98,18 +98,18 @@ def rew_update(state, rew, tstep, bufr_enc, centroid, model, new_beta = args.par
 
     if tstep % new_freq == 0 and tstep >0:
         '''
-        Calculate new centroid every 'new_freq' timestep
+        Calculate new HVD_point every 'new_freq' timestep
         '''
-        print("\n Current centroid calculation frequency :"+str(new_freq))
+        print("\n Current HVD_point calculation frequency :"+str(new_freq))
         print("\n Current #samples from neighborhood: " +str(samples))
         print("\n Current beta :"+str(new_beta))
-        centroid = updt.get_density_pk(candt,k,bufr_enc) # Get density peak
-        print("centroid new :"+str(centroid))
+        HVD_point = updt.get_density_pk(candt,k,bufr_enc) # Get density peak
+        print("HVD_point new :"+str(HVD_point))
 
     else:
         pass
 
-    if centroid[0][0] == 0:
+    if HVD_point[0][0] == 0:
         rew_d = rew
     else:
         wts = nn.Softmax(dim=0)
@@ -136,7 +136,7 @@ def rew_update(state, rew, tstep, bufr_enc, centroid, model, new_beta = args.par
             o_enc =  torch.from_numpy(ovl.astype('float32'))
 
             o_enc = model.encoder(o_enc) #------------****
-            nov_score =  torch.abs(torch.sum(torch.sub(centroid, o_enc.detach())))
+            nov_score =  torch.abs(torch.sum(torch.sub(HVD_point, o_enc.detach())))
 
             ucb_arr[id]= nov_score * val_V.detach()
 
@@ -148,7 +148,7 @@ def rew_update(state, rew, tstep, bufr_enc, centroid, model, new_beta = args.par
         rew_d =  torch.tensor(rew_d)
 
         #writer.add_scalar('V value', val_V, tstep)
-    return rew_d, enc_observation, centroid
+    return rew_d, enc_observation, HVD_point
 
 def evaluate_policy(total_numsteps):
     avg_reward = 0.
@@ -212,7 +212,7 @@ for i_episode in itertools.count(1):
         # Ignore the "done" signal if it comes from hitting the time horizon.
         # (https://github.com/openai/spinningup/blob/master/spinup/algos/sac/sac.py)
         mask = 1 if episode_steps == env._max_episode_steps else float(not done)
-        reward_updated, state_encoded, centroid = rew_update(next_state, reward, total_numsteps, enc_buffer, centroid, model)
+        reward_updated, state_encoded, HVD_point = rew_update(next_state, reward, total_numsteps, enc_buffer, HVD_point, model)
         enc_buffer.append(state_encoded.detach().float()) #Save encoded state to buffer
         #print('\n Updated reward'+str(type(reward_updated)))
         memory.push(state, action, reward_updated, next_state, mask) # Append transition to memory, with updated reward
