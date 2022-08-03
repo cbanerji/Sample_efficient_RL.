@@ -11,8 +11,8 @@ from torch.utils.tensorboard import SummaryWriter
 import utils
 #import TD3
 import OurDDPG
-import DDPG_valfun
-import TD3
+import DDPG_2
+import TD3_2
 import get_rewupdate as updt
 import math
 import time
@@ -20,6 +20,7 @@ from random import random
 from collections import namedtuple, deque
 
 device = torch.device("cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
@@ -53,7 +54,7 @@ if args.save_model and not os.path.exists("./models"):
 	os.makedirs("./models")
 
 env = gym.make(args.env)
-writer = SummaryWriter('runs_Hopper_TD3/TD3_valfun_{}_{}_{}'.format (args.env, args.info, args.seed))
+writer = SummaryWriter('runs_Hopper_TD3/TD3_2_{}_{}_{}'.format (args.env, args.info, args.seed))
 
 enc_buffer = [] #Encoded state memory
 HVD_point = torch.zeros([1,2])# (x,y) y is the bottleneck for an env.
@@ -98,7 +99,7 @@ def rew_update(state, rew, tstep, bufr_enc, HVD_point, model, new_beta = args.pa
         '''
         print("\n Current HVD_point calculation frequency :"+str(new_freq))
         print("\n Current beta :"+str(new_beta))
-        HVD_point = updt.get_density_pk(candt,k,bufr_enc) # Get density peak
+        HVD_point = updt.get_HVD_point(candt,k,bufr_enc) # Get density peak
         print("HVD_point new :"+str(HVD_point))
 
     else:
@@ -130,6 +131,7 @@ def rew_update(state, rew, tstep, bufr_enc, HVD_point, model, new_beta = args.pa
             #get V using original state (non encoded)
             saf = torch.from_numpy(ovl).float().to(device)
             val_V = param_updt.valfun(saf).cpu() #obtain V for given state vector#**
+	    #val_V = param_updt.valfun(saf).device() #obtain V for given state vector
 
             o_enc =  torch.from_numpy(ovl.astype('float32'))
             o_enc = model.encoder(o_enc) #------------****
@@ -179,15 +181,15 @@ if __name__ == "__main__":
 		kwargs["policy_noise"] = args.policy_noise * max_action
 		kwargs["noise_clip"] = args.noise_clip * max_action
 		kwargs["policy_freq"] = args.policy_freq
-		policy = TD3_valfun.TD3(**kwargs)
-		param_updt = TD3_valfun.Vnet(state_dim, action_dim, max_action)
+		policy = TD3_2.TD3(**kwargs)
+		param_updt = TD3_2.Vnet(state_dim, action_dim, max_action)
 
 	elif args.policy == "OurDDPG":
 		policy = OurDDPG.DDPG(**kwargs)
 
 	elif args.policy == "DDPG":
-		policy = DDPG_valfun.DDPG(**kwargs)
-		param_updt = DDPG_valfun.Vnet(**kwargs)
+		policy = DDPG_2.DDPG(**kwargs)
+		param_updt = DDPG_2.Vnet(**kwargs)
 
 	if args.load_model != "":
 		policy_file = file_name if args.load_model == "default" else args.load_model
@@ -248,13 +250,19 @@ if __name__ == "__main__":
 		if t % 5000 == 0:
 			eval_policy(policy, args.env, args.seed, t)
 
+		#rest after sometime
+		if t%200000 == 0 and t>0:
+			time.sleep(600)
+			print('\n Going to sleep...')
+
+
 		if done:
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
 			print(f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
 			#net1 = reward_updated.item()-reward
 			#print('\n Net reward update:'+str(net1) )
 			# Reset environment
-			state, done = env.reset(), False#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+			state, done = env.reset(), False
 			episode_reward = 0
 			episode_timesteps = 0
 			episode_num += 1
