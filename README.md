@@ -1,3 +1,5 @@
-# RL_research
+# RL_research :
+ -- **About :** Mainly focusses on augmenting sample efficiency in conventional RL algorithms and designing of new ones,  using novel techniques based on deep generative models, optimization, machine learning techniques etc.
  + **sac_ipns** -- Implements a novel intrinsic reward generation technique termed IPNS, augmenting exploration of Soft actor critic (SAC) algorithm and improving its performance.
- + **ddpg_td3_ipns** -- Pairing of IPNS artifacts with convensional DDPG and TD3 algorithms.
+ + **ddpg_td3_ipns** -- Pairing of IPNS artifacts with conventional DDPG and TD3 algorithms.
+ + **sac_isac** -- implementation of my work named [ISAC: Improved Soft Actor-Critic](https://ieeexplore.ieee.org/document/9778268), a later version of the shared code was used to generate the plots in the paper.  In our proposed improved SAC (ISAC), we first introduce a new prioritization scheme for selecting better samples from the experience replay (ER) buffer. Second we use a mixture of the prioritized off-policy data with the latest on-policy data for training the policy and value function networks.
