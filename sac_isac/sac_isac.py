@@ -311,7 +311,7 @@ class ReplayBuffer:
 
         p = []
         q = []
-        #BEO2 code
+
         # sample double the batch size
         samp_size = 2* self.batch_size
         more_exp = random.sample(self.memory, k= samp_size)
@@ -324,17 +324,17 @@ class ReplayBuffer:
                 q.append(more_exp[m].curew)
 
         # Insert similarity constraint here
-        f = hp.similarity() # instantiate the class
+        f = hp.similarity() # instantiate
         meas = f.cosine_similarity(p,q) # call the similarity measure function
         last_meas.append(meas)
         avg_meas = np.mean(last_meas)
 
-        if meas < 0.5: #0.7: for Ipd
+        if meas < 0.5: #SDP threshold
             # Sort the exp samples from max to min score
             sorted_more_exp = sorted(more_exp, key = lambda i: i.curew, reverse = True)
             experiences = sorted_more_exp[:self.batch_size] #Choose from Sorted samples
 
-        elif meas >= 0.5:
+        elif meas >= 0.5:#SDP threshold
             experiences = more_exp[:self.batch_size] # Choose from unsorted samples
 
 
@@ -455,8 +455,8 @@ def SAC(l,epi_count, max_t=1000, print_every=10):
 
             if done:
                 epi_rew_list.append(score) # collect the episodic rewards over last 10 episodes
-                #print("\n Episode finished after {} timesteps".format(t+1))
                 tmill = tsteps/1000000
+                #display
                 print('\n Current tsteps in Million:' +str(tmill))
                 print('\n Current tsteps:' +str(tsteps))
                 break
@@ -472,13 +472,12 @@ def SAC(l,epi_count, max_t=1000, print_every=10):
         #--------------------------------------------------------------------------------------------------------------------------
         curew = score # This episode's cumulative reward
 
-        # Decide on keeping or rejecting this episode data in Rbuffer--------------------------------->>
-        # SMA Part
+        # Keep track of cumulative rewards, for testing purposes (SMA value)
         if i_episode < window:
             arr.append(curew) #Add episodic cumulative rewards  for the first time
         else:
             pred = np.mean(arr)
-            if curew > pred or math.isclose(curew, pred, abs_tol = 50): #50: Ipd, 5: Swim, wak: 100
+            if curew > pred or math.isclose(curew, pred, abs_tol = 50): #abs_tot is env. specific
                 arr.popleft()
                 arr.append(curew)
             else:
@@ -493,6 +492,7 @@ def SAC(l,epi_count, max_t=1000, print_every=10):
     epi_wise_data =list(itertools.chain(all_epi_data)) #convert list of list to a episodic list of items
 
     print("\n SMA at beginnig of next round: "+str(pred))
+    
     if l >= 2 :
         filter_epi(epi_rew_list, epi_wise_data, pred) # one round worth data sent to filter method for selection, save to buffer and update
     else:
