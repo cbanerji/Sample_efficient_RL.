@@ -158,7 +158,7 @@ class Agent():
             pass
 
         dat =  [state, action, reward, next_state, done] #Get the current transition data
-        if len(self.memory) > 2*BATCH_SIZE:
+        if len(self.memory) > 2*BATCH_SIZE: # If buffer size enough for sampling
             experiences = self.memory.sample()
 
             if intmt_updt_flag == 2:
@@ -360,7 +360,7 @@ def detr_eval():
     state = env.reset()
     epi_scores = []
     #state = state.reshape((1,state_size))
-    for e in range (5):
+    for e in range (5): # Run 5 repeats of evaluation episode
         state = env.reset()
         state = state.reshape((1,state_size))
         score1 = []
@@ -393,7 +393,7 @@ def filter_epi(epi_rew_list, epi_wise_data, prdct):
 
     if rn2 < Eps2:
         pass
-    elif rn2 >= Eps2:p
+    elif rn2 >= Eps2:
         # Pass all data to buffer
         for inds in range (len(epi_rew_list)):
             dicta = epi_wise_data[inds]
@@ -418,14 +418,14 @@ def SAC(l,epi_count, max_t=1000, print_every=10):
 
         state = state.reshape((1,state_size))
         score = 0
-        
+
         one_epi_data = []
         rew = 0
 
         for t in range(max_t):
 
             # Run Evaluation episodes every nth timestep
-            if tsteps%1000 == 0: # Run 5 Eval runs... was 1000 for IPend
+            if tsteps%1000 == 0:
                 detr_eval()
 
             action = agent.act(state)
